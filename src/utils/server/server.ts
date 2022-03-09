@@ -201,9 +201,19 @@ export const initFakeServer = () => {
     });
 
     axiosMock.onGet('/tasks').reply(config => {
-        const { byType, byDay } = config.params;
+        const { byType, byDay, byTitle } = config.params;
 
         const tasksWithFilters = tasks
+            .filter(task => {
+                if (!byTitle) {
+                    return true;
+                }
+
+                const title = task.title.toLowerCase();
+                const searchValue = byTitle.toLowerCase().trim();
+
+                return title.includes(searchValue);
+            })
             .filter(task => (byType === 'All' ? true : task.type === byType))
             .filter(task => {
                 if (byDay === 'All') {
