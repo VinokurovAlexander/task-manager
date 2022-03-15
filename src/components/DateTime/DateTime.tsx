@@ -12,6 +12,7 @@ interface DateTime {
     defaultValue?: number | null;
     style?: SxProps;
     required?: boolean;
+    disabled?: boolean;
 }
 
 const DateTime: React.FC<DateTime> = ({
@@ -20,6 +21,7 @@ const DateTime: React.FC<DateTime> = ({
     name,
     style,
     required = false,
+    disabled = false,
 }) => {
     const initialValue = defaultValue ? new Date(defaultValue) : null;
     const [value, setValue] = React.useState<Date | null>(initialValue);
@@ -28,17 +30,13 @@ const DateTime: React.FC<DateTime> = ({
         <LocalizationProvider dateAdapter={AdapterDateFns} locale={ruLocale}>
             <DateTimePicker
                 renderInput={props => (
-                    <TextField
-                        {...props}
-                        name={name}
-                        sx={style}
-                        required={required}
-                    />
+                    <TextField {...props} name={name} sx={style} required={required} />
                 )}
                 label={label}
                 value={value}
                 onChange={setValue}
                 mask='__.__.____ __:__'
+                disabled={disabled}
             />
         </LocalizationProvider>
     );

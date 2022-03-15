@@ -1,9 +1,11 @@
 import React from 'react';
-import axios from 'axios';
-import { ITask } from 'utils/server';
+import { ITask } from 'api/task';
 import { getTaskFromFormData } from 'components/TaskForm';
 import { TaskForm } from 'components/TaskForm';
-import { useError } from 'hooks/useError';
+import { api } from 'api';
+import { useRequest } from 'hooks/useRequest';
+
+const { task: taskApi } = api;
 
 export interface IEdit {
     task: ITask;
@@ -12,18 +14,15 @@ export interface IEdit {
 
 const Edit: React.FC<IEdit> = ({ task, onTaskEdit }) => {
     const { id, ...taskData } = task;
-
-    const { errorMessage, setError } = useError();
+    const { handleError, isTimeout, notice } = useRequest();
 
     const handleSubmit = (formData: FormData) => {
-        axios
-            .patch(`/tasks/${id}`, getTaskFromFormData(formData))
+        taskApi
+            .edit(id, getTaskFromFormData(formData))
             .then(response => {
                 onTaskEdit(response.data.tasks);
             })
-            .catch(e => {
-                setError(e.response.data);
-            });
+            .catch(handleError);
     };
 
     return (
@@ -31,7 +30,8 @@ const Edit: React.FC<IEdit> = ({ task, onTaskEdit }) => {
             defaultValues={taskData}
             onSubmit={handleSubmit}
             btnText='Edit task'
-            error={errorMessage}
+            notice={notice}
+            loading={isTimeout}
         />
     );
 };

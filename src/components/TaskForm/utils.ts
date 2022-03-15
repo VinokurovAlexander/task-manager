@@ -1,5 +1,5 @@
 import { parse } from 'date-fns';
-import { TaskType } from 'utils/server';
+import { TaskType } from 'api/task';
 
 const getTimestampFromInput = (dateTime: string) =>
     parse(dateTime, 'dd.MM.yyyy HH:mm', new Date()).getTime();
@@ -11,17 +11,9 @@ export const getTaskFromFormData = (formData: FormData) => {
     return {
         title: formData.get('title') as string,
         type: formData.get('type') as TaskType,
-        plannedStartTime: getTimestampFromInput(
-            formData.get('plannedStartTime') as string
-        ),
-        plannedEndTime: getTimestampFromInput(
-            formData.get('plannedEndTime') as string
-        ),
-        actualStartTime: actualStartTime
-            ? getTimestampFromInput(actualStartTime as string)
-            : null,
-        actualEndTime: actualEndTime
-            ? getTimestampFromInput(actualEndTime as string)
-            : null,
+        plannedStartTime: getTimestampFromInput(formData.get('plannedStartTime') as string),
+        plannedEndTime: getTimestampFromInput(formData.get('plannedEndTime') as string),
+        actualStartTime: actualStartTime ? getTimestampFromInput(actualStartTime as string) : null,
+        actualEndTime: actualEndTime ? getTimestampFromInput(actualEndTime as string) : null,
     };
 };

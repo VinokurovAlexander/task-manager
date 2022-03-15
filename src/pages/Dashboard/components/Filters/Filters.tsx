@@ -1,44 +1,38 @@
 import React from 'react';
-import axios from 'axios';
 import { SxProps } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { Select } from 'components/Select';
-import { TaskType, ITask } from 'utils/server';
 import { debounce } from 'utils/debounce';
+import { TaskType, ITaskFilter } from 'api/task';
 
 interface IFilters {
     style?: SxProps;
-    onFiltersChange?: (newTasks: ITask[]) => void;
+    onFiltersChange: (filters: ITaskFilter) => void;
+    isTimeout: boolean;
+    filters: ITaskFilter;
 }
 
 const filterByDateTime = ['All', 'Today'];
 
-const Filters: React.FC<IFilters> = ({ style, onFiltersChange }) => {
-    const [filters, setFilters] = React.useState({
-        byDay: 'All',
-        byType: 'All',
-        byTitle: ''
-    });
-
-    const handleFilterChange = (e: SelectChangeEvent) => {
+const Filters: React.FC<IFilters> = ({ style, onFiltersChange, isTimeout, filters }) => {
+    const handleFilterChange = debounce((e: SelectChangeEvent) => {
         const { name, value } = e.target;
+        const newFilters = { ...filters, [name]: value };
 
-        setFilters({ ...filters, [name]: value });
-    };
-
-    const debouncedFilterChange = debounce(handleFilterChange, 300);
-
-    React.useEffect(() => {
-        axios.get('/tasks', { params: { ...filters } }).then(response => {
-            onFiltersChange?.(response.data.tasks);
-        });
-    }, [filters, onFiltersChange]);
+        onFiltersChange(newFilters);
+    }, 300);
 
     return (
         <Box sx={{ ...style, display: 'flex', gap: 4 }}>
-            <TextField onChange={debouncedFilterChange} name="byTitle" placeholder="By title" label="By title"/>
+            <TextField
+                onChange={handleFilterChange}
+                name='byTitle'
+                placeholder='By title'
+                label='By title'
+                disabled={isTimeout}
+            />
             <Select
                 items={filterByDateTime}
                 label='By day'
@@ -47,6 +41,7 @@ const Filters: React.FC<IFilters> = ({ style, onFiltersChange }) => {
                 style={{ minWidth: '100px' }}
                 defaultValue={filters.byDay}
                 onChange={handleFilterChange}
+                disabled={isTimeout}
             />
             <Select
                 items={['All', ...Object.values(TaskType)]}
@@ -56,6 +51,7 @@ const Filters: React.FC<IFilters> = ({ style, onFiltersChange }) => {
                 style={{ minWidth: '150px' }}
                 defaultValue={filters.byType}
                 onChange={handleFilterChange}
+                disabled={isTimeout}
             />
         </Box>
     );

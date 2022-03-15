@@ -8,7 +8,9 @@ interface IQuestion {
 
 const Question: React.FC<IQuestion> = ({ text }) => (
     <>
-        <Typography paragraph>{text}</Typography>
+        <Typography paragraph sx={{ mb: 0 }}>
+            {text}
+        </Typography>
         <TextField label='Answer' name='answer' required />
     </>
 );
