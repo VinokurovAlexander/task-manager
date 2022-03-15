@@ -1,0 +1,25 @@
+{
+    "extends": [
+        "plugin:react-hooks/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "plugins": [
+        "eslint-plugin-prettier"
+    ],
+    "rules": {
+        "prettier/prettier": ["error"],
+        "arrow-body-style": [
+            "error",
+            "as-needed"
+        ],
+        "newline-before-return": "error",
+        "eol-last": ["error", "always"]
+    }
+}
