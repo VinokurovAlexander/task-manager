@@ -5,7 +5,7 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { getDateFromTimestamp, getBadgeColorByType } from './utils';
-import { ITask } from 'utils/server';
+import { ITask } from 'api/task';
 
 interface ICard {
     task: ITask;
@@ -13,14 +13,7 @@ interface ICard {
 }
 
 const Card: React.FC<ICard> = ({ task, onClick }) => {
-    const {
-        type,
-        title,
-        actualStartTime,
-        plannedStartTime,
-        plannedEndTime,
-        actualEndTime,
-    } = task;
+    const { type, title, actualStartTime, plannedStartTime, plannedEndTime, actualEndTime } = task;
 
     const handleTaskClick = (task: ITask) => () => {
         onClick?.(task);
@@ -28,10 +21,7 @@ const Card: React.FC<ICard> = ({ task, onClick }) => {
 
     return (
         <CardUI sx={{ height: 250 }} elevation={2}>
-            <CardActionArea
-                onClick={handleTaskClick(task)}
-                style={{ height: '100%' }}
-            >
+            <CardActionArea onClick={handleTaskClick(task)} style={{ height: '100%' }}>
                 <CardContent
                     sx={{
                         display: 'flex',
@@ -40,11 +30,7 @@ const Card: React.FC<ICard> = ({ task, onClick }) => {
                         alignItems: 'flex-start',
                     }}
                 >
-                    <Chip
-                        label={type}
-                        sx={{ mb: 1 }}
-                        color={getBadgeColorByType(type)}
-                    />
+                    <Chip label={type} sx={{ mb: 1 }} color={getBadgeColorByType(type)} />
                     <Typography variant='h5'>{title}</Typography>
                     <Typography variant='body2'>
                         Planned start time:&ensp;
@@ -56,8 +42,7 @@ const Card: React.FC<ICard> = ({ task, onClick }) => {
                     </Typography>
                     <Typography variant='body2'>
                         Actual start time:&ensp;
-                        {actualStartTime &&
-                            getDateFromTimestamp(actualStartTime)}
+                        {actualStartTime && getDateFromTimestamp(actualStartTime)}
                     </Typography>
                     <Typography variant='body2'>
                         Actual end time:&ensp;

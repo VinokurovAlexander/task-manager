@@ -1,4 +1,4 @@
-import { TaskType } from 'utils/server';
+import { TaskType } from 'api/task';
 
 export const getDateFromTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);

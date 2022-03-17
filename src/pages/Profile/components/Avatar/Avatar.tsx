@@ -3,12 +3,14 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import AvatarUI from '@mui/material/Avatar';
 
-const Avatar = () => {
+interface IAvatar {
+    disabled?: boolean;
+}
+
+const Avatar: React.FC<IAvatar> = ({ disabled = false }) => {
     const [image, setImage] = React.useState<File | null>(null);
 
-    const handleUploadChange: React.ChangeEventHandler<
-        HTMLInputElement
-    > = e => {
+    const handleUploadChange: React.ChangeEventHandler<HTMLInputElement> = e => {
         const { files } = e.target;
 
         if (files) {
@@ -41,11 +43,13 @@ const Avatar = () => {
                         name='avatar'
                         onChange={handleUploadChange}
                     />
-                    <Button variant='contained' component='span'>
+                    <Button variant='contained' component='span' disabled={disabled}>
                         Upload
                     </Button>
                 </label>
-                <Button onClick={handleDelete}>Delete</Button>
+                <Button onClick={handleDelete} disabled={disabled}>
+                    Delete
+                </Button>
             </Box>
         </Box>
     );

@@ -14,6 +14,7 @@ interface ISelect {
     required?: boolean;
     defaultValue?: string;
     style?: SxProps;
+    disabled?: boolean;
     onChange?: (e: SelectChangeEvent) => void;
 }
 
@@ -26,6 +27,7 @@ const Select: React.FC<ISelect> = ({
     defaultValue,
     style,
     onChange,
+    disabled = false,
 }) => {
     const [value, setValue] = React.useState(defaultValue || '');
     const labelId = `${id}-label`;
@@ -47,6 +49,7 @@ const Select: React.FC<ISelect> = ({
                 id={id}
                 name={name}
                 required={required}
+                disabled={disabled}
             >
                 {items.map(item => (
                     <MenuItem value={item} key={nanoid(4)}>

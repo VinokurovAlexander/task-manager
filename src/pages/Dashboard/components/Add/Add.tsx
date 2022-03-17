@@ -4,19 +4,22 @@ import Fab from '@mui/material/Fab';
 import { SxProps } from '@mui/material/styles';
 import { Modal } from 'components/Modal';
 import { TaskForm } from 'components/TaskForm';
-import { ITask } from 'utils/server';
-import { useError } from 'hooks/useError';
+import { ITask } from 'api/task';
 import { getTaskFromFormData } from 'components/TaskForm';
-import axios from 'axios';
+import { api } from 'api';
+import { useRequest } from 'hooks/useRequest';
 
 interface IAdd {
     style?: SxProps;
-    onTaskAdd?: (newTasks: ITask[]) => void;
+    onTaskAdd: (newTasks: ITask[]) => void;
+    disabled?: boolean;
 }
 
-const Add: React.FC<IAdd> = ({ style, onTaskAdd }) => {
+const { task } = api;
+
+const Add: React.FC<IAdd> = ({ style, onTaskAdd, disabled }) => {
     const [isOpenModal, setIsOpenModal] = React.useState(false);
-    const { errorMessage, setError } = useError();
+    const { handleError, notice, isTimeout, setNotice } = useRequest();
 
     const handleClick = () => {
         setIsOpenModal(true);
@@ -27,24 +30,22 @@ const Add: React.FC<IAdd> = ({ style, onTaskAdd }) => {
     };
 
     const handleSubmit = (formData: FormData) => {
-        axios
-            .post('/tasks', getTaskFromFormData(formData))
+        task.add(getTaskFromFormData(formData))
             .then(response => {
                 setIsOpenModal(false);
-                onTaskAdd?.(response.data.tasks);
+                setNotice(null);
+                onTaskAdd(response.data.tasks);
             })
-            .catch(e => {
-                setError(e.response.data);
-            });
+            .catch(handleError);
     };
 
     return (
         <>
-            <Fab color='primary' size='large' sx={style} onClick={handleClick}>
+            <Fab color='primary' size='large' sx={style} onClick={handleClick} disabled={disabled}>
                 <AddIcon />
             </Fab>
             <Modal open={isOpenModal} onClose={handleModalClose}>
-                <TaskForm onSubmit={handleSubmit} error={errorMessage} />
+                <TaskForm onSubmit={handleSubmit} notice={notice} loading={isTimeout} />
             </Modal>
         </>
     );

@@ -1,76 +1,44 @@
 import MockAdapter from 'axios-mock-adapter';
-import axios from 'axios';
+import { instance } from 'api';
 import { pathToRegexp } from 'path-to-regexp';
 import { nanoid } from 'nanoid';
-import { ITask, IUser, TaskType } from './types';
+import { tasks, users } from './constants';
 
-export const tasks: ITask[] = [
-    {
-        id: nanoid(4),
-        title: 'Task-1',
-        type: TaskType.WORK,
-        plannedStartTime: 1642578448000,
-        plannedEndTime: 1642751248000,
-        actualStartTime: 1643788048000,
-        actualEndTime: null,
-    },
-    {
-        id: nanoid(4),
-        title: 'Task-2',
-        type: TaskType.MEDICINE,
-        plannedStartTime: 1642578448000,
-        plannedEndTime: 1642751248000,
-        actualStartTime: 1643788048000,
-        actualEndTime: null,
-    },
-];
-
-const users: IUser[] = [
-    {
-        id: nanoid(4),
-        login: 'admin',
-        password: 'admin',
-        recoveryQuestion:
-            'The Ultimate Question of Life, the Universe, and Everything',
-        recoveryAnswer: '42',
-        recoveryToken: null,
-    },
-];
-
-const axiosMock = new MockAdapter(axios);
+const axiosMock = new MockAdapter(instance);
 
 export const initFakeServer = () => {
-    axiosMock.onPatch(pathToRegexp('/tasks/:id')).reply(config => {
-        const { url, data } = config;
-        const id = url?.substring(url.lastIndexOf('/') + 1);
+    axiosMock.onAny().timeoutOnce();
 
-        const index = tasks.findIndex(task => task.id === id);
+    axiosMock
+        .onPatch(pathToRegexp('/tasks/:id'))
+        .timeoutOnce()
+        .onPatch(pathToRegexp('/tasks/:id'))
+        .reply(config => {
+            const { url, data } = config;
+            const id = url?.substring(url.lastIndexOf('/') + 1);
 
-        if (index === -1) {
-            return [400, { type: 'notExist', message: 'Task is not exist' }];
-        }
+            const index = tasks.findIndex(task => task.id === id);
 
-        tasks.splice(index, 1);
-        tasks.push({
-            id,
-            ...JSON.parse(data),
+            if (index === -1) {
+                return [400, { message: 'Task is not exist' }];
+            }
+
+            tasks.splice(index, 1);
+            tasks.push({
+                id,
+                ...JSON.parse(data),
+            });
+
+            return [200, { tasks }];
         });
-
-        return [200, { tasks }];
-    });
 
     axiosMock.onPost('/login').reply(config => {
         const { data } = config;
         const { login, password } = JSON.parse(data);
-        const user = users.find(
-            user => user.login === login && user.password === password
-        );
+        const user = users.find(user => user.login === login && user.password === password);
 
         if (!user) {
-            return [
-                400,
-                { type: 'authFailed', message: 'Wrong username or password' },
-            ];
+            return [400, { message: 'Wrong username or password' }];
         }
 
         return [200, { sessionKey: nanoid() }];
@@ -114,7 +82,6 @@ export const initFakeServer = () => {
             return [
                 400,
                 {
-                    type: 'exist',
                     message: 'User is not exists',
                 },
             ];
@@ -134,7 +101,6 @@ export const initFakeServer = () => {
             return [
                 400,
                 {
-                    type: 'exist',
                     message: 'User is not exists',
                 },
             ];
@@ -146,7 +112,6 @@ export const initFakeServer = () => {
             return [
                 400,
                 {
-                    type: 'notValid',
                     message: 'Recovery answer is not correct',
                 },
             ];
@@ -163,14 +128,11 @@ export const initFakeServer = () => {
         const { data } = config;
         const { userId, password, recoveryToken } = JSON.parse(data);
 
-        const user = users.find(
-            user => user.id === userId && user.recoveryToken === recoveryToken
-        );
+        const user = users.find(user => user.id === userId && user.recoveryToken === recoveryToken);
 
         if (!user) {
             return [
                 {
-                    type: 'badRequest',
                     message: 'Not valid user or recovery token',
                 },
             ];
@@ -187,23 +149,37 @@ export const initFakeServer = () => {
         ];
     });
 
-    axiosMock.onPost('/tasks').reply(config => {
-        const { data } = config;
+    axiosMock
+        .onPost('/tasks')
+        .timeoutOnce()
+        .onPost('/tasks')
+        .reply(config => {
+            const { data } = config;
 
-        const task = {
-            id: nanoid(4),
-            ...JSON.parse(data),
-        };
+            const task = {
+                id: nanoid(4),
+                ...JSON.parse(data),
+            };
 
-        tasks.push(task);
+            tasks.push(task);
 
-        return [200, { tasks }];
-    });
+            return [200, { tasks }];
+        });
 
     axiosMock.onGet('/tasks').reply(config => {
-        const { byType, byDay } = config.params;
+        const { byType, byDay, byTitle } = config.params;
 
         const tasksWithFilters = tasks
+            .filter(task => {
+                if (!byTitle) {
+                    return true;
+                }
+
+                const title = task.title.toLowerCase();
+                const searchValue = byTitle.toLowerCase().trim();
+
+                return title.includes(searchValue);
+            })
             .filter(task => (byType === 'All' ? true : task.type === byType))
             .filter(task => {
                 if (byDay === 'All') {
@@ -211,9 +187,7 @@ export const initFakeServer = () => {
                 }
 
                 const currentDate = new Date().toLocaleDateString();
-                const taskDate = new Date(
-                    task.plannedStartTime
-                ).toLocaleDateString();
+                const taskDate = new Date(task.plannedStartTime).toLocaleDateString();
 
                 return currentDate === taskDate;
             });
@@ -221,5 +195,13 @@ export const initFakeServer = () => {
         return [200, { tasks: tasksWithFilters }];
     });
 
-    axiosMock.onPost('/profile').reply(200);
+    axiosMock.onPatch('/profile').reply(200);
+
+    axiosMock.onGet('/heartbeat').reply(() => {
+        if (Math.random() > 0.7) {
+            return [200];
+        }
+
+        return [500];
+    });
 };

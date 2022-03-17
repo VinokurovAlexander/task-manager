@@ -1,12 +1,12 @@
 import React from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
-import { useError } from 'hooks/useError';
 import { Form } from 'components/Form';
 import { Question } from './components/Question';
 import { Password } from './components/Password';
+import { api } from 'api';
+import { useRequest } from 'hooks/useRequest';
 
 interface IUser {
     id: string;
@@ -14,28 +14,29 @@ interface IUser {
     recoveryToken?: string;
 }
 
+const {
+    recovery: { getQuestion, sendAnswer, changePassword },
+} = api;
+
 const Recovery = () => {
     const navigate = useNavigate();
 
-    const { errorMessage, setError } = useError();
     const [user, setUser] = React.useState<IUser | null>(null);
+    const { notice, handleError, isTimeout, setNotice } = useRequest();
 
     const isQuestion = user?.recoveryQuestion;
     const isRecoveryToken = user?.recoveryToken;
 
     const getUser = (login: string) => {
-        axios
-            .get('/recovery', { params: { login } })
+        getQuestion(login)
             .then(response => {
                 setUser(response.data);
             })
-            .catch(e => {
-                setError(e.response.data);
-            });
+            .catch(handleError);
     };
 
     const handleSubmit = (formData: FormData) => {
-        setError(null);
+        setNotice(null);
 
         if (!user) {
             const login = formData.get('login') as string;
@@ -48,45 +49,33 @@ const Recovery = () => {
         if (isRecoveryToken) {
             const password = formData.get('password') as string;
 
-            axios
-                .patch('/recovery', {
-                    recoveryToken: user.recoveryToken,
-                    password,
-                    userId: user.id,
-                })
+            changePassword({
+                recoveryToken: user.recoveryToken as string,
+                password,
+                userId: user.id,
+            })
                 .then(() => {
                     navigate('/dashboard');
                 })
-                .catch(e => {
-                    setError(e.respoonse.data);
-                });
+                .catch(handleError);
 
             return;
         }
 
         const answer = formData.get('answer') as string;
 
-        axios
-            .post('/recovery', { userId: user.id, recoveryAnswer: answer })
+        sendAnswer(user.id, answer)
             .then(response => {
                 setUser(response.data);
             })
-            .catch(e => {
-                setError(e.response.data);
-            });
+            .catch(handleError);
     };
 
     return (
         <Container maxWidth='sm' sx={{ mt: 10 }}>
-            <Form
-                btnText='Reset password'
-                onSubmit={handleSubmit}
-                error={errorMessage}
-            >
-                {!user && <TextField label='Login' name='login' required />}
-                {isQuestion && (
-                    <Question text={user.recoveryQuestion as string} />
-                )}
+            <Form btnText='Reset password' onSubmit={handleSubmit} notice={notice} loading={isTimeout}>
+                {!user && <TextField label='Login' name='login' required disabled={isTimeout} />}
+                {isQuestion && <Question text={user.recoveryQuestion as string} />}
                 {isRecoveryToken && <Password />}
             </Form>
         </Container>
