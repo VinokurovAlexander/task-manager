@@ -10,13 +10,11 @@ import { TaskType, ITaskFilter } from 'api/task';
 interface IFilters {
     style?: SxProps;
     onFiltersChange: (filters: ITaskFilter) => void;
-    isTimeout: boolean;
+    disabled?: boolean;
     filters: ITaskFilter;
 }
 
-const filterByDateTime = ['All', 'Today'];
-
-const Filters: React.FC<IFilters> = ({ style, onFiltersChange, isTimeout, filters }) => {
+const Filters: React.FC<IFilters> = ({ style, onFiltersChange, disabled = false, filters }) => {
     const handleFilterChange = debounce((e: SelectChangeEvent) => {
         const { name, value } = e.target;
         const newFilters = { ...filters, [name]: value };
@@ -31,17 +29,7 @@ const Filters: React.FC<IFilters> = ({ style, onFiltersChange, isTimeout, filter
                 name='byTitle'
                 placeholder='By title'
                 label='By title'
-                disabled={isTimeout}
-            />
-            <Select
-                items={filterByDateTime}
-                label='By day'
-                id='filter-by-day'
-                name='byDay'
-                style={{ minWidth: '100px' }}
-                defaultValue={filters.byDay}
-                onChange={handleFilterChange}
-                disabled={isTimeout}
+                disabled={disabled}
             />
             <Select
                 items={['All', ...Object.values(TaskType)]}
@@ -51,7 +39,7 @@ const Filters: React.FC<IFilters> = ({ style, onFiltersChange, isTimeout, filter
                 style={{ minWidth: '150px' }}
                 defaultValue={filters.byType}
                 onChange={handleFilterChange}
-                disabled={isTimeout}
+                disabled={disabled}
             />
         </Box>
     );

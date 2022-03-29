@@ -15,5 +15,6 @@ export const getTaskFromFormData = (formData: FormData) => {
         plannedEndTime: getTimestampFromInput(formData.get('plannedEndTime') as string),
         actualStartTime: actualStartTime ? getTimestampFromInput(actualStartTime as string) : null,
         actualEndTime: actualEndTime ? getTimestampFromInput(actualEndTime as string) : null,
+        completed: formData.get('completed') === 'true',
     };
 };

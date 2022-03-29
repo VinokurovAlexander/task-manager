@@ -4,7 +4,8 @@ import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { getDateFromTimestamp, getBadgeColorByType } from './utils';
+import { getDateFromTimestamp } from './utils';
+import { getTaskColourByType } from '../../utils';
 import { ITask } from 'api/task';
 
 interface ICard {
@@ -30,7 +31,7 @@ const Card: React.FC<ICard> = ({ task, onClick }) => {
                         alignItems: 'flex-start',
                     }}
                 >
-                    <Chip label={type} sx={{ mb: 1 }} color={getBadgeColorByType(type)} />
+                    <Chip label={type} sx={{ mb: 1 }} color={getTaskColourByType(type)} />
                     <Typography variant='h5'>{title}</Typography>
                     <Typography variant='body2'>
                         Planned start time:&ensp;
