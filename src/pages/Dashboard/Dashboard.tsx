@@ -85,7 +85,7 @@ const Dashboard = () => {
                 disabled={isTimeout}
             />
             <Modal open={isOpenModal} onClose={handleModalClose} keepMounted>
-                <>{editTask && <Edit task={editTask} onTaskEdit={handleTaskEdit} />}</>
+                {editTask && <Edit task={editTask} onTaskEdit={handleTaskEdit} />}
             </Modal>
         </Box>
     );
