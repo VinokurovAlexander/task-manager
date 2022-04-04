@@ -15,12 +15,13 @@ export interface ITask {
     plannedEndTime: number;
     actualStartTime: number | null;
     actualEndTime: number | null;
+    completed: boolean;
 }
 
 export interface ITaskFilter {
-    byDay: string;
-    byType: string;
-    byTitle: string;
+    byType?: string;
+    byTitle?: string;
+    isToday?: boolean;
 }
 
 interface ITaskResponse {

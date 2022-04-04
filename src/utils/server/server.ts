@@ -167,7 +167,7 @@ export const initFakeServer = () => {
         });
 
     axiosMock.onGet('/tasks').reply(config => {
-        const { byType, byDay, byTitle } = config.params;
+        const { byType, byTitle, isToday } = config.params;
 
         const tasksWithFilters = tasks
             .filter(task => {
@@ -180,9 +180,15 @@ export const initFakeServer = () => {
 
                 return title.includes(searchValue);
             })
-            .filter(task => (byType === 'All' ? true : task.type === byType))
             .filter(task => {
-                if (byDay === 'All') {
+                if (!byType || byType === 'All') {
+                    return true;
+                }
+
+                return task.type === byType;
+            })
+            .filter(task => {
+                if (!isToday) {
                     return true;
                 }
 
@@ -198,7 +204,7 @@ export const initFakeServer = () => {
     axiosMock.onPatch('/profile').reply(200);
 
     axiosMock.onGet('/heartbeat').reply(() => {
-        if (Math.random() > 0.7) {
+        if (Math.random() > 0.3) {
             return [200];
         }
 

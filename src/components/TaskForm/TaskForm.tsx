@@ -19,6 +19,9 @@ const TaskForm: React.FC<ITaskForm> = ({ defaultValues, ...formProps }) => (
             label='Title'
             required
             disabled={formProps.loading}
+            inputProps={{
+                maxLength: 15,
+            }}
         />
         <Select
             items={Object.values(TaskType)}
@@ -53,6 +56,14 @@ const TaskForm: React.FC<ITaskForm> = ({ defaultValues, ...formProps }) => (
             defaultValue={defaultValues?.actualEndTime}
             name='actualEndTime'
             disabled={formProps.loading}
+        />
+        <Select
+            items={['true', 'false']}
+            label='Completed'
+            id='completed'
+            name='completed'
+            defaultValue={defaultValues?.completed.toString()}
+            required
         />
     </Form>
 );

@@ -13,7 +13,7 @@ export const modalStyle = {
     p: 4,
 };
 
-const Modal: React.FC<ModalProps> = ({ children, ...props }) => (
+const Modal: React.FC<Omit<ModalProps, 'children'>> = ({ children, ...props }) => (
     <ModalUI {...props}>
         <Box sx={modalStyle}>{children}</Box>
     </ModalUI>

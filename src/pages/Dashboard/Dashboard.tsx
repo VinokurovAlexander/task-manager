@@ -1,50 +1,48 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import { Timeline } from './components/Timeline';
 import { Menu } from './components/Menu';
 import { Header } from './components/Header';
 import { Tasks } from './components/Tasks';
 import { Add } from './components/Add';
 import { Filters } from './components/Filters';
-import { useRequest } from 'hooks/useRequest';
-import { api } from 'api';
-import { ITaskFilter, ITask } from 'api/task';
-
-const { task } = api;
+import { useTodayTasks } from './hooks/useTodayTasks';
+import { useFilteredTasks } from './hooks/useFilteredTasks';
+import { useEditModal } from './hooks/useEditModal';
+import { Modal } from '../../components/Modal';
+import { Edit } from './components/Edit';
+import { ITask } from 'api/task';
 
 const Dashboard = () => {
-    const [filters, setFilters] = React.useState({
-        byDay: 'All',
-        byType: 'All',
-        byTitle: '',
-    });
-    const [tasks, setTasks] = React.useState<ITask[]>([]);
-    const { isTimeout, handleError } = useRequest();
+    const {
+        filteredTasks,
+        isTimeout: isFilteredTasksTimeout,
+        filters,
+        setFilters,
+        getFilteredTasks,
+    } = useFilteredTasks();
+    const { todayTasks, isTimeout: isTodayTasksTimeout, getTodayTasks } = useTodayTasks();
 
-    const getTasks = React.useCallback(
-        (filters: ITaskFilter) => {
-            task.get(filters)
-                .then(response => {
-                    setTasks(response.data.tasks);
-                })
-                .catch(handleError);
-        },
-        [handleError]
-    );
+    const isTimeout = isFilteredTasksTimeout || isTodayTasksTimeout;
 
-    const handleTaskEdit = (newTasks: ITask[]) => {
-        setTasks(newTasks);
+    const { isOpenModal, editTask, setIsOpenModal, setEditTask } = useEditModal();
+
+    const handleTaskEdit = () => {
+        handleModalClose();
+        getTodayTasks();
+        getFilteredTasks(filters);
     };
 
-    const handleFiltersChange = React.useCallback(newFilters => {
-        setFilters(newFilters);
-    }, []);
+    const handleModalClose = () => {
+        setIsOpenModal(false);
+        setEditTask(null);
+    };
 
-    React.useEffect(() => {
-        if (!isTimeout) {
-            getTasks(filters);
-        }
-    }, [filters, getTasks, isTimeout]);
+    const openModalForEdit = (task: ITask) => {
+        setEditTask(task);
+        setIsOpenModal(true);
+    };
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -59,14 +57,25 @@ const Dashboard = () => {
             >
                 <Box>
                     <Header />
-                    <Container maxWidth='xl'>
+                    <Container
+                        maxWidth='xl'
+                        sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+                    >
                         <Filters
-                            style={{ mb: 4 }}
-                            onFiltersChange={handleFiltersChange}
-                            isTimeout={isTimeout}
+                            onFiltersChange={setFilters}
+                            disabled={isTimeout}
                             filters={filters}
                         />
-                        <Tasks items={tasks} onTaskEdit={handleTaskEdit} isTimeout={isTimeout} />
+                        <Tasks
+                            items={filteredTasks}
+                            onTaskClick={openModalForEdit}
+                            isLoading={isFilteredTasksTimeout}
+                        />
+                        <Timeline
+                            tasks={todayTasks}
+                            onItemClick={openModalForEdit}
+                            isLoading={isTodayTasksTimeout}
+                        />
                     </Container>
                 </Box>
             </Box>
@@ -75,6 +84,9 @@ const Dashboard = () => {
                 onTaskAdd={handleTaskEdit}
                 disabled={isTimeout}
             />
+            <Modal open={isOpenModal} onClose={handleModalClose} keepMounted>
+                {editTask && <Edit task={editTask} onTaskEdit={handleTaskEdit} />}
+            </Modal>
         </Box>
     );
 };

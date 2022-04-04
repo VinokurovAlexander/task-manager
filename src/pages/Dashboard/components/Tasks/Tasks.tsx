@@ -1,44 +1,28 @@
 import React from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import { ITask } from 'api/task';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Card } from '../Card';
-import { Edit } from '../Edit';
-import { Modal } from 'components/Modal';
+import { SxProps } from '@mui/material/styles';
 
 interface ITasks {
     items: ITask[];
-    onTaskEdit?: (tasks: ITask[]) => void;
-    isTimeout?: boolean;
+    onTaskClick: (task: ITask) => void;
+    isLoading?: boolean;
+    style?: SxProps;
 }
 
-const Tasks: React.FC<ITasks> = ({ items, onTaskEdit, isTimeout = false }) => {
-    const [isOpenModal, setIsOpenModal] = React.useState(false);
-    const [editTask, setEditTask] = React.useState<ITask | null>(null);
+const Tasks: React.FC<ITasks> = ({ items, onTaskClick, isLoading = false, style }) => {
     const hasItems = items.length !== 0;
-
-    const handleTaskClick = (task: ITask) => {
-        setIsOpenModal(!isOpenModal);
-        setEditTask(task);
-    };
-
-    const handleModalClose = () => {
-        setIsOpenModal(false);
-        setEditTask(null);
-    };
-
-    const handleTaskEdit = (newTasks: ITask[]) => {
-        handleModalClose();
-        onTaskEdit?.(newTasks);
-    };
 
     const renderItems = () =>
         hasItems ? (
             <Grid container spacing={3}>
                 {items.map(task => (
                     <Grid item xl={3} lg={4} key={task.id}>
-                        <Card task={task} onClick={handleTaskClick} />
+                        <Card task={task} onClick={onTaskClick} />
                     </Grid>
                 ))}
             </Grid>
@@ -46,15 +30,7 @@ const Tasks: React.FC<ITasks> = ({ items, onTaskEdit, isTimeout = false }) => {
             <Typography variant='h5'>Nothing found</Typography>
         );
 
-    return (
-        <>
-            {isTimeout && <CircularProgress />}
-            {!isTimeout && renderItems()}
-            <Modal open={isOpenModal} onClose={handleModalClose} keepMounted>
-                <>{editTask && <Edit task={editTask} onTaskEdit={handleTaskEdit} />}</>
-            </Modal>
-        </>
-    );
+    return <Box sx={{ ...style }}>{isLoading ? <CircularProgress /> : renderItems()}</Box>;
 };
 
 export default Tasks;
