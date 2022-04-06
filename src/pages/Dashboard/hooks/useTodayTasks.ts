@@ -1,26 +1,28 @@
 import React from 'react';
 import { ITask } from 'api/task';
-import { useRequest } from 'hooks/useRequest';
-import { api } from 'api';
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 export const useTodayTasks = () => {
     const [todayTasks, setTodayTasks] = React.useState<ITask[]>([]);
-    const { handleError, isTimeout } = useRequest();
+    const worker = useSharedWorker();
 
     const getTodayTasks = React.useCallback(() => {
-        api.task
-            .get({ isToday: true })
-            .then(response => {
-                setTodayTasks(response.data.tasks);
-            })
-            .catch(handleError);
-    }, [handleError]);
+        worker?.port.postMessage({ type: 'tasks-get', payload: { isToday: true } });
+    }, [worker]);
 
     React.useEffect(() => {
-        if (!isTimeout) {
-            getTodayTasks();
-        }
-    }, [isTimeout, getTodayTasks]);
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
 
-    return { todayTasks, isTimeout, getTodayTasks };
+            if (data.type === 'success') {
+                setTodayTasks(data.tasks);
+            }
+        });
+    }, [worker]);
+
+    React.useEffect(() => {
+        getTodayTasks();
+    }, [getTodayTasks]);
+
+    return { todayTasks, getTodayTasks };
 };

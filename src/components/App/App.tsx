@@ -6,9 +6,6 @@ import { Recovery } from 'pages/Recovery';
 import { Navigation } from '../Navigation';
 import { Dashboard } from 'pages/Dashboard';
 import { Profile } from 'pages/Profile';
-import { initFakeServer } from 'utils/server';
-
-initFakeServer();
 
 const App: React.FC = () => (
     <BrowserRouter>

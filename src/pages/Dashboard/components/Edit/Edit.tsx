@@ -2,28 +2,40 @@ import React from 'react';
 import { ITask } from 'api/task';
 import { getTaskFromFormData } from 'components/TaskForm';
 import { TaskForm } from 'components/TaskForm';
-import { api } from 'api';
-import { useRequest } from 'hooks/useRequest';
-
-const { task: taskApi } = api;
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 export interface IEdit {
     task: ITask;
-    onTaskEdit: (tasks: ITask[]) => void;
+    onTaskEdit: () => void;
 }
 
 const Edit: React.FC<IEdit> = ({ task, onTaskEdit }) => {
     const { id, ...taskData } = task;
-    const { handleError, isTimeout, notice } = useRequest();
+    const [notice, setNotice] = React.useState(null);
+    const worker = useSharedWorker();
 
     const handleSubmit = (formData: FormData) => {
-        taskApi
-            .edit(id, getTaskFromFormData(formData))
-            .then(response => {
-                onTaskEdit(response.data.tasks);
-            })
-            .catch(handleError);
+        worker?.port.postMessage({
+            type: 'tasks-edit',
+            payload: { id, task: getTaskFromFormData(formData) },
+        });
     };
+
+    React.useEffect(() => {
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
+
+            if (data.type === 'success') {
+                onTaskEdit();
+
+                return;
+            }
+
+            if (data.type === 'error') {
+                setNotice(data);
+            }
+        });
+    }, [onTaskEdit, worker?.port]);
 
     return (
         <TaskForm
@@ -31,7 +43,6 @@ const Edit: React.FC<IEdit> = ({ task, onTaskEdit }) => {
             onSubmit={handleSubmit}
             btnText='Edit task'
             notice={notice}
-            loading={isTimeout}
         />
     );
 };

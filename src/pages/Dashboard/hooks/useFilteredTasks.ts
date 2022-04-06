@@ -1,34 +1,35 @@
 import React from 'react';
 import { ITask, ITaskFilter } from 'api/task';
-import { useRequest } from 'hooks/useRequest';
-import { api } from 'api';
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 export const useFilteredTasks = () => {
+    const worker = useSharedWorker();
     const [filters, setFilters] = React.useState<ITaskFilter>({
         byType: 'All',
         byTitle: '',
     });
-
     const [filteredTasks, setFilteredTasks] = React.useState<ITask[]>([]);
-    const { isTimeout, handleError } = useRequest();
 
     const getFilteredTasks = React.useCallback(
         (filters: ITaskFilter) => {
-            api.task
-                .get(filters)
-                .then(response => {
-                    setFilteredTasks(response.data.tasks);
-                })
-                .catch(handleError);
+            worker?.port.postMessage({ type: 'tasks-get', payload: filters });
         },
-        [handleError]
+        [worker]
     );
 
     React.useEffect(() => {
-        if (!isTimeout) {
-            getFilteredTasks(filters);
-        }
-    }, [filters, getFilteredTasks, isTimeout]);
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
 
-    return { filteredTasks, isTimeout, setFilters, filters, getFilteredTasks };
+            if (data.type === 'success') {
+                setFilteredTasks(data.tasks);
+            }
+        });
+    }, [worker]);
+
+    React.useEffect(() => {
+        getFilteredTasks(filters);
+    }, [filters, getFilteredTasks]);
+
+    return { filteredTasks, setFilters, filters, getFilteredTasks };
 };

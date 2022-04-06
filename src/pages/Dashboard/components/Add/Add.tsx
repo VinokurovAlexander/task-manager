@@ -4,22 +4,19 @@ import Fab from '@mui/material/Fab';
 import { SxProps } from '@mui/material/styles';
 import { Modal } from 'components/Modal';
 import { TaskForm } from 'components/TaskForm';
-import { ITask } from 'api/task';
 import { getTaskFromFormData } from 'components/TaskForm';
-import { api } from 'api';
-import { useRequest } from 'hooks/useRequest';
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 interface IAdd {
     style?: SxProps;
-    onTaskAdd: (newTasks: ITask[]) => void;
+    onTaskAdd: () => void;
     disabled?: boolean;
 }
 
-const { task } = api;
-
 const Add: React.FC<IAdd> = ({ style, onTaskAdd, disabled }) => {
+    const worker = useSharedWorker();
     const [isOpenModal, setIsOpenModal] = React.useState(false);
-    const { handleError, notice, isTimeout, setNotice } = useRequest();
+    const [notice, setNotice] = React.useState(null);
 
     const handleClick = () => {
         setIsOpenModal(true);
@@ -30,14 +27,26 @@ const Add: React.FC<IAdd> = ({ style, onTaskAdd, disabled }) => {
     };
 
     const handleSubmit = (formData: FormData) => {
-        task.add(getTaskFromFormData(formData))
-            .then(response => {
-                setIsOpenModal(false);
-                setNotice(null);
-                onTaskAdd(response.data.tasks);
-            })
-            .catch(handleError);
+        worker?.port.postMessage({ type: 'tasks-add', payload: getTaskFromFormData(formData) });
+        setNotice(null);
     };
+
+    React.useEffect(() => {
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
+
+            if (data.type === 'success') {
+                onTaskAdd();
+                setIsOpenModal(false);
+
+                return;
+            }
+
+            if (data.type === 'error') {
+                setNotice(data);
+            }
+        });
+    }, [onTaskAdd, worker?.port]);
 
     return (
         <>
@@ -45,7 +54,7 @@ const Add: React.FC<IAdd> = ({ style, onTaskAdd, disabled }) => {
                 <AddIcon />
             </Fab>
             <Modal open={isOpenModal} onClose={handleModalClose}>
-                <TaskForm onSubmit={handleSubmit} notice={notice} loading={isTimeout} />
+                <TaskForm onSubmit={handleSubmit} notice={notice} />
             </Modal>
         </>
     );

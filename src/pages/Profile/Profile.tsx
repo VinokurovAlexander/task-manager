@@ -4,13 +4,11 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import { Avatar } from './components/Avatar';
 import { Form } from 'components/Form';
-import { api } from 'api';
-import { useRequest } from 'hooks/useRequest';
-
-const { profile } = api;
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 const Profile = () => {
-    const { handleError, notice, isTimeout, setNotice } = useRequest();
+    const [notice, setNotice] = React.useState(null);
+    const worker = useSharedWorker();
 
     const handleSubmit = (formData: FormData) => {
         const name = formData.get('name') as string | null;
@@ -19,48 +17,50 @@ const Profile = () => {
         const recoveryAnswer = formData.get('recoveryAnswer') as string;
         const avatar = formData.get('avatar') as File | null;
 
-        profile
-            .edit({
-                name,
-                surname,
-                recoveryQuestion,
-                recoveryAnswer,
-                avatar,
-            })
-            .then(() => {
-                setNotice(null);
-                alert('ok');
-            })
-            .catch(handleError);
+        worker?.port.postMessage({
+            type: 'profile-edit',
+            payload: { name, surname, recoveryQuestion, recoveryAnswer, avatar },
+        });
+
+        setNotice(null);
     };
+
+    React.useEffect(() => {
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
+
+            if (data.type === 'success') {
+                alert('ok');
+
+                return;
+            }
+
+            if (data.type === 'error') {
+                setNotice(data);
+            }
+        });
+    }, [worker?.port]);
 
     return (
         <Container maxWidth='sm' sx={{ mt: 10 }}>
             <Typography variant='h3' sx={{ mb: 4 }}>
                 Edit profile
             </Typography>
-            <Form btnText='Save' onSubmit={handleSubmit} notice={notice} loading={isTimeout}>
-                <Avatar disabled={isTimeout} />
-                <TextField name='name' label='Name' placeholder='Name' disabled={isTimeout} />
-                <TextField
-                    name='surname'
-                    label='Surname'
-                    placeholder='surname'
-                    disabled={isTimeout}
-                />
+            <Form btnText='Save' onSubmit={handleSubmit} notice={notice}>
+                <Avatar />
+                <TextField name='name' label='Name' placeholder='Name' />
+                <TextField name='surname' label='Surname' placeholder='surname' />
                 <TextField
                     name='recoveryQuestion'
                     label='Recovery question'
                     placeholder='Recovery question'
                     required
-                    disabled={isTimeout}
                 />
                 <TextField
                     name='recoveryAnswer'
                     label='Recovery answer'
                     placeholder='Recovery answer'
                     required
-                    disabled={isTimeout}
                 />
             </Form>
         </Container>
