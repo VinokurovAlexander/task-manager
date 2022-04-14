@@ -15,16 +15,8 @@ import { Edit } from './components/Edit';
 import { ITask } from 'api/task';
 
 const Dashboard = () => {
-    const {
-        filteredTasks,
-        isTimeout: isFilteredTasksTimeout,
-        filters,
-        setFilters,
-        getFilteredTasks,
-    } = useFilteredTasks();
-    const { todayTasks, isTimeout: isTodayTasksTimeout, getTodayTasks } = useTodayTasks();
-
-    const isTimeout = isFilteredTasksTimeout || isTodayTasksTimeout;
+    const { filteredTasks, filters, setFilters, getFilteredTasks } = useFilteredTasks();
+    const { todayTasks, getTodayTasks } = useTodayTasks();
 
     const { isOpenModal, editTask, setIsOpenModal, setEditTask } = useEditModal();
 
@@ -61,28 +53,15 @@ const Dashboard = () => {
                         maxWidth='xl'
                         sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}
                     >
-                        <Filters
-                            onFiltersChange={setFilters}
-                            disabled={isTimeout}
-                            filters={filters}
-                        />
-                        <Tasks
-                            items={filteredTasks}
-                            onTaskClick={openModalForEdit}
-                            isLoading={isFilteredTasksTimeout}
-                        />
-                        <Timeline
-                            tasks={todayTasks}
-                            onItemClick={openModalForEdit}
-                            isLoading={isTodayTasksTimeout}
-                        />
+                        <Filters onFiltersChange={setFilters} filters={filters} />
+                        <Tasks items={filteredTasks} onTaskClick={openModalForEdit} />
+                        <Timeline tasks={todayTasks} onItemClick={openModalForEdit} />
                     </Container>
                 </Box>
             </Box>
             <Add
                 style={{ position: 'fixed', bottom: '50px', right: '50px' }}
                 onTaskAdd={handleTaskEdit}
-                disabled={isTimeout}
             />
             <Modal open={isOpenModal} onClose={handleModalClose} keepMounted>
                 {editTask && <Edit task={editTask} onTaskEdit={handleTaskEdit} />}

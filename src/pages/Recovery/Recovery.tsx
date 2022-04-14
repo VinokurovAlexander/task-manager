@@ -5,8 +5,7 @@ import TextField from '@mui/material/TextField';
 import { Form } from 'components/Form';
 import { Question } from './components/Question';
 import { Password } from './components/Password';
-import { api } from 'api';
-import { useRequest } from 'hooks/useRequest';
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 interface IUser {
     id: string;
@@ -14,67 +13,74 @@ interface IUser {
     recoveryToken?: string;
 }
 
-const {
-    recovery: { getQuestion, sendAnswer, changePassword },
-} = api;
-
 const Recovery = () => {
     const navigate = useNavigate();
+    const worker = useSharedWorker();
 
     const [user, setUser] = React.useState<IUser | null>(null);
-    const { notice, handleError, isTimeout, setNotice } = useRequest();
+    const [notice, setNotice] = React.useState(null);
 
     const isQuestion = user?.recoveryQuestion;
     const isRecoveryToken = user?.recoveryToken;
 
-    const getUser = (login: string) => {
-        getQuestion(login)
-            .then(response => {
-                setUser(response.data);
-            })
-            .catch(handleError);
-    };
+    const handleSubmit = React.useCallback(
+        (formData: FormData) => {
+            setNotice(null);
 
-    const handleSubmit = (formData: FormData) => {
-        setNotice(null);
+            if (!user) {
+                const login = formData.get('login') as string;
 
-        if (!user) {
-            const login = formData.get('login') as string;
+                worker?.port.postMessage({ type: 'get-question', payload: login });
 
-            getUser(login);
+                return;
+            }
 
-            return;
-        }
+            if (isRecoveryToken) {
+                const password = formData.get('password') as string;
 
-        if (isRecoveryToken) {
-            const password = formData.get('password') as string;
+                worker?.port.postMessage({
+                    type: 'change-password',
+                    payload: {
+                        recoveryToken: user.recoveryToken,
+                        password,
+                        id: user.id,
+                    },
+                });
 
-            changePassword({
-                recoveryToken: user.recoveryToken as string,
-                password,
-                userId: user.id,
-            })
-                .then(() => {
-                    navigate('/dashboard');
-                })
-                .catch(handleError);
+                return;
+            }
 
-            return;
-        }
+            const answer = formData.get('answer') as string;
 
-        const answer = formData.get('answer') as string;
+            worker?.port.postMessage({ type: 'send-answer', payload: { id: user.id, answer } });
+        },
+        [isRecoveryToken, user, worker?.port]
+    );
 
-        sendAnswer(user.id, answer)
-            .then(response => {
-                setUser(response.data);
-            })
-            .catch(handleError);
-    };
+    React.useEffect(() => {
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
+
+            if (data.type === 'error') {
+                setNotice(data);
+
+                return;
+            }
+
+            if (data.user) {
+                setUser(data.user);
+
+                return;
+            }
+
+            navigate('/dashboard');
+        });
+    }, [navigate, worker?.port]);
 
     return (
         <Container maxWidth='sm' sx={{ mt: 10 }}>
-            <Form btnText='Reset password' onSubmit={handleSubmit} notice={notice} loading={isTimeout}>
-                {!user && <TextField label='Login' name='login' required disabled={isTimeout} />}
+            <Form btnText='Reset password' onSubmit={handleSubmit} notice={notice}>
+                {!user && <TextField label='Login' name='login' required />}
                 {isQuestion && <Question text={user.recoveryQuestion as string} />}
                 {isRecoveryToken && <Password />}
             </Form>

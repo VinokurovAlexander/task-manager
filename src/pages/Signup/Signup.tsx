@@ -3,36 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import { Form } from 'components/Form';
-import { api } from 'api';
-import { useRequest } from 'hooks/useRequest';
-
-const {
-    auth: { signUp },
-} = api;
+import { useSharedWorker } from 'hooks/useSharedWorker';
 
 const Signup = () => {
+    const [notice, setNotice] = React.useState(null);
     const navigate = useNavigate();
-    const { notice, isTimeout, handleError } = useRequest();
+    const worker = useSharedWorker();
 
     const handleSubmit = React.useCallback(
         formData => {
             const login = formData.get('login') as string;
             const password = formData.get('password') as string;
 
-            signUp(login, password)
-                .then(() => {
-                    navigate('/profile');
-                })
-                .catch(handleError);
+            worker?.port.postMessage({ type: 'signup', payload: { login, password } });
         },
-        [navigate, handleError]
+        [worker]
     );
+
+    React.useEffect(() => {
+        worker?.port.addEventListener('message', e => {
+            const { data } = e;
+
+            if (data.type === 'success') {
+                navigate('/profile');
+
+                return;
+            }
+
+            if (data.type === 'error') {
+                setNotice(data);
+            }
+        });
+    }, [navigate, worker?.port]);
 
     return (
         <Container maxWidth='sm' sx={{ mt: 10 }}>
-            <Form notice={notice} onSubmit={handleSubmit} btnText='Sign up' loading={isTimeout}>
-                <TextField label='Login' name='login' required disabled={isTimeout} />
-                <TextField label='Password' name='password' required type='password' disabled={isTimeout} />
+            <Form notice={notice} onSubmit={handleSubmit} btnText='Sign up'>
+                <TextField label='Login' name='login' required />
+                <TextField label='Password' name='password' required type='password' />
             </Form>
         </Container>
     );

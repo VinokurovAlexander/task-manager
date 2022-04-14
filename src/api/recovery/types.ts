@@ -20,5 +20,9 @@ interface IChangePassword {
 export interface IRecoveryApi {
     getQuestion: (login: string) => AxiosPromise<IUserWithQuestion>;
     sendAnswer: (userId: string, recoveryAnswer: string) => AxiosPromise<IUserWithToken>;
-    changePassword: ({ recoveryToken, password, userId }: IChangePassword) => AxiosPromise<ISessionKey>;
+    changePassword: ({
+        recoveryToken,
+        password,
+        userId,
+    }: IChangePassword) => AxiosPromise<ISessionKey>;
 }

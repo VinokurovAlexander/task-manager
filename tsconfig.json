@@ -6,9 +6,13 @@
         "esModuleInterop": true,
         "moduleResolution": "Node",
         "strict": true,
-        "module": "ES6",
+        "module": "ESNext",
         "noUnusedParameters": true,
-        "noUnusedLocals": true
+        "noUnusedLocals": true,
+        "lib": [
+            "dom",
+            "WebWorker",
+        ]
     },
     "include": [
         "src"
