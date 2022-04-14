@@ -6,6 +6,9 @@ import { Recovery } from 'pages/Recovery';
 import { Navigation } from '../Navigation';
 import { Dashboard } from 'pages/Dashboard';
 import { Profile } from 'pages/Profile';
+import { initServiceWorker } from 'utils/service-worker';
+
+initServiceWorker();
 
 const App: React.FC = () => (
     <BrowserRouter>
